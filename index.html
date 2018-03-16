@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/styles.css">
+    <script src='js/functions.js'></script>
+    <script src='js/world.js'></script>
+    <script src='js/ubengine.js'></script>
+    <script src='js/formcatalog.js'></script>
+    <script src='js/shadercatalog.js'></script>
+    <title>easywebGL v1.0 </title>
+  </head>
+  <body>
+      <b>Ziel:</b> Ein erstes Dreieck
+      <div id='canvas'></div>
+
+<script>
+// Ein Dreieck anlegen mit nur 6 Zeilen Code? Nicht ganz. 
+
+// Eine Welt erschaffen
+var wrld1 = new World();
+
+// Ein Dreieck erzeugen
+var obj1 = new Child({type:'triangle'});
+
+// Dreieck(e) zur Welt hinzufügen
+wrld1.addChildren([obj1]);
+
+// Engine erzeugen (Parameter ist die id des DIVs)
+var eng = new UBEngine('canvas');
+
+// Alle Welten hinzufügen
+eng.addWorlds([wrld1]);
+
+// loslegen 
+eng.start();
+
+</script>
+
+  </body>
+</html>
