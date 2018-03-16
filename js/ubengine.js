@@ -24,6 +24,8 @@ var UBEngine=function(vsId){
         this.buffer=[];           // {attribute:,index:} // Verknüpfen von Kind und Buffern
         this.uniform=[];          // {name:, value: } // Daten nur im Kind  vorhanden
         this.programIndex=null;   // Referenz auf das Programm (aus IntWorld)
+        this.shaderFlag={position:false,
+                         color:false}; // Daten für die Shader-Steuerung
       
         this.setUniforms=setUniforms;         // Setzen der Uniform-Locations  (Eigenschaften)
         this.setAttributes=setAttributes;     // Setzen der Attribute-Locations (das sind die Buffer)
@@ -170,6 +172,7 @@ var UBEngine=function(vsId){
             simpleCode+=`// addNewBuffer erzeugt keinen Code<br><br>`;
             var index;
             if(form.position){ // Position            // bufferIndex holen
+                roIntChild.shaderFlag.position=true;
                 roIntChild.buffer.push({attribute:'a_position',
                                         attributeIndex:null,  // Nummer von a_position im Program
                                         index : getBufferIndex('pos',form.position,gl.ARRAY_BUFFER),
@@ -177,6 +180,7 @@ var UBEngine=function(vsId){
                                         triangleCount:form.position.length/3});
             }
             if(form.color){ // Farbe, falls für jeden Punkt verwendet
+                roIntChild.shaderFlag.color=true;
                 roIntChild.buffer.push({attribute:'a_color',
                                         attributeIndex:null, // Nummer von a_color im Program
                                         index : getBufferIndex('color',form.color,gl.ARRAY_BUFFER),

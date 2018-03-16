@@ -29,7 +29,12 @@ var FormCatalog={
         var p=child.position||{x:0,y:0,z:0}; // Default mitte
         pos=[  -w+p.x,-h+p.y,p.z,   w+p.x,-h+p.y,p.z,   0+p.x,h+p.y,p.z];  // Dreieck in der Ebene
         nor=[0,0,1.0,   0,0,1.0,  0,0,1.0];  // Normale in y Richtung
-        col=[0,0,1.0,1,  0,0,1.0,1,    0,0,1.0,1 ]; // blau
+        if(child.color){
+            col=child.color.concat(child.color).concat(child.color);
+        }
+        else{
+            col=[0,0,1.0,1,  0,0,1.0,1,    0,0,1.0,1 ]; // blau
+        }
         idx=[0,1,2];
         return {position:pos, normal:nor,color:col,index:idx};
     },

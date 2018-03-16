@@ -12,7 +12,7 @@
     <title>easywebGL v1.0 </title>
   </head>
   <body>
-      <b>Ziel:</b> JS Code zum "ersten Dreieck"
+      <b>Ziel:</b> Farbe des Dreiecks ändern
       <div id='canvas'></div>
       <br>
       Direkter Script-Code
@@ -25,7 +25,7 @@
 var wrld1 = new World();
 
 // Ein Dreieck erzeugen
-var obj1 = new Child({type:'triangle'});
+var obj1 = new Child({type:'triangle',color:[1.0,0.0,0.0,1.0]}); // r,g,b,a
 
 // Dreieck(e) zur Welt hinzufügen
 wrld1.addChildren([obj1]);
