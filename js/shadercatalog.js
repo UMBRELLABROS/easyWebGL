@@ -15,7 +15,8 @@ var ShaderCatalog={
     /* Vertex-Shader Code */
     getVertexShader:function(voWorld,voChild){
         var t="";
-        t+="attribute vec3 a_position;\n"; // Position hat 3 Komponenten
+        t+="attribute vec4 a_position;\n"; // Position hat nun 4 Komponenten
+        t+="uniform mat4 u_matrix;\n"; // Manipulationsmatrx 4x4
 
         if(voChild.shaderFlag.color){
             t+="attribute vec4 a_color;\n"; // Farbe hat 4 Komponenten            
@@ -27,7 +28,7 @@ var ShaderCatalog={
 
 
         t+="void main(){\n";
-        t+="gl_Position=vec4(a_position,1);\n"; // aus 3 Komponenten werden 4
+        t+="gl_Position=vec4(u_matrix*a_position);\n"; // aus 3 Komponenten werden 4
 
         if(voChild.shaderFlag.color){
             t+="v_color = a_color;\n"; // Farbe hat 4 Komponenten            

@@ -5,6 +5,7 @@
 /* WORLD*/
 var World=function(){
     this.maChild=[]; // Objekte
+    this.viewMatrix; // Transformation für die Ansicht
 
     /* externe Funktionen */
     this.addChildren=addChildren;
@@ -31,8 +32,12 @@ var Child=function(voChildData){
     this.position=voChildData.position||{x:0,y:0,z:0}; // Position des Zentrums
     this.color=voChildData.color||[0.0,0.0,0.0,1.0]; // Farbe für alle Punkte
 
+    // Funktionen
+    this.data;             //  externes Array verschieben, verdrehen (Zum Durchreichen an die engine)   
+
     // Beschreibung der Funktion    
     this.help = helpData;
+    
     
     function helpData(){
         var t="";

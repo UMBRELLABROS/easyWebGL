@@ -14,6 +14,7 @@ var FormCatalog={
         var attribute=null;
         switch(child.type){
             case 'triangle': attribute=this.formTriangle(child); break;
+            case 'rectangle': attribute=this.formRectangle(child); break;
         } // Ende switch
         // Je nach Anforderung Daten wieder nullen
         if(!child.indexBuffer) attribute.index=null;
@@ -36,6 +37,28 @@ var FormCatalog={
             col=[0,0,1.0,1,  0,0,1.0,1,    0,0,1.0,1 ]; // blau
         }
         idx=[0,1,2];
+        return {position:pos, normal:nor,color:col,index:idx};
+    },
+    /* Daten für ein Rechteck berechnen */
+    formRectangle:function(child){
+        // Sechs Punkte in y=0 Ebene mit Normalen
+        var pos,nor,idx,col;
+        var w=child.width/2||0.25; // Default 0.25
+        var h=child.height/2||0.25; // Default: 0.25
+        var p=child.position||{x:0,y:0,z:0}; // Default mitte
+        pos=[  -w+p.x,-h+p.y,p.z,   w+p.x,-h+p.y,p.z,   w+p.x,h+p.y,p.z,
+               -w+p.x,-h+p.y,p.z,   w+p.x,h+p.y,p.z,   -w+p.x,h+p.y,p.z];  // Rechteck in der Ebene
+        nor=[0,0,1.0,   0,0,1.0,  0,0,1.0 ,
+             0,0,1.0,   0,0,1.0,  0,0,1.0];  // Normale in y Richtung
+        if(child.color){
+            col=child.color.concat(child.color).concat(child.color);
+            col=col.concat(col);
+        }
+        else{
+            col=[0,0,1.0,1,  0,0,1.0,1,    0,0,1.0,1, 
+                 0,0,1.0,1,  0,0,1.0,1,    0,0,1.0,1]; // blau
+        }
+        idx=[0,1,2,3,4,5];
         return {position:pos, normal:nor,color:col,index:idx};
     },
 }

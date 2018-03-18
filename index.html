@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/styles.css">
     <script src='js/functions.js'></script>
+    <script src='js/math.js'></script>
     <script src='js/world.js'></script>
     <script src='js/ubengine.js'></script>
     <script src='js/formcatalog.js'></script>
@@ -12,20 +13,23 @@
     <title>easywebGL v1.0 </title>
   </head>
   <body>
-      <b>Ziel:</b> Farbe des Dreiecks ändern
+      <b>Ziel:</b> 2D Bewegung
       <div id='canvas'></div>
+      <input type='range' id='xpos' min="-100" max="100" value="0" onChange='moveObject(obj1, this.value)'>
       <br>
+      <input type="button" onClick="eng.start()">
       Direkter Script-Code
       <div id='simpleCode'></div>
 
 <script>
-// Ein Dreieck anlegen mit nur 6 Zeilen Code? Nicht ganz. 
+
 
 // Eine Welt erschaffen
 var wrld1 = new World();
 
 // Ein Dreieck erzeugen
-var obj1 = new Child({type:'triangle',color:[1.0,0.0,0.0,1.0]}); // r,g,b,a
+var obj1 = new Child({type:'rectangle',color:[1.0,0.0,0.0,1.0],position:{x:0,y:0.3,z:0} }); // r,g,b,a
+obj1.data={pos:[0,0,0]};
 
 // Dreieck(e) zur Welt hinzufügen
 wrld1.addChildren([obj1]);
@@ -38,6 +42,11 @@ eng.addWorlds([wrld1]);
 
 // loslegen 
 eng.start();
+
+function moveObject(obj,x){
+  var position = [x/100,0,0]; // Absolute Position aus dem Regler   
+  obj.data.pos=position;
+}
 
 // Script code erzeugen
 $('simpleCode').innerHTML = eng.getSimpleCode()
