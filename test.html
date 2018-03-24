@@ -4,19 +4,128 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/styles.css">    
+    <script src='js/math.js'></script>
     <title>easywebGL v1.0 ohne LIB</title>
   </head>
   <body>
       <b>Ziel:</b> JS Code zum "ersten Dreieck"
       <div id='canvas'></div>
       <br>
-     
+      <input type='range' id='xpos' min="-100" max="100" value="0" onChange='moveObject(this.value)'>
+      <br>
 
 <script>
+// Teil 1 (getContext)
+// canvas und gl(webGL) erzeugen
+var div=document.getElementById('canvas');
+var canvas=document.createElement('canvas');
+canvas.width=div.offsetWidth;
+canvas.height=div.offsetHeight;
+div.appendChild(canvas);
+div.style.backgroundColor='#eeeeee';
+div.style.border='solid 1px #333';
+try {gl = canvas.getContext('webgl') }
+catch(e) {alert('Exception init: '+e.toString());}
+if(!gl) {alert('Unable to create Web GL context');}
 
-// Hier Code einfügen:
+// Teil 2 addNewWord erzeugt keinen Code
+
+var aBuffer=[]; // nur für Script 
+var aUniform=[]; // nur für Script 
+var aProg=[]; // nur für Script
+var gPos=[0,0,0];
+function moveObject(x){
+gPos = [x/100,Math.sin(x/100)*Math.sin(x/100),0]; // Absolute Position aus dem Regler
+drawScene();
+}
+
+// addNewChild erzeugt keinen Code
+
+// FormCatalog
+var pos=[-0.25,-0.25,0,0.25,-0.25,0,0.25,0.25,0,-0.25,-0.25,0,0.25,0.25,0,-0.25,0.25,0];
+var color=[1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1];
+
+// addNewBuffer erzeugt keinen Code
+
+// getBufferIndex erzeugt keinen Code pos -0.25,-0.25,0,0.25,-0.25,0,0.25,0.25,0,-0.25,-0.25,0,0.25,0.25,0,-0.25,0.25,0
+
+// createBuffer pos 34962 
+var buffer=gl.createBuffer(); 
+var array= new Float32Array(pos);
+gl.bindBuffer(34962,buffer);
+gl.bufferData(34962, array, gl.STATIC_DRAW);
+aBuffer[0]=buffer;
+
+// getBufferIndex erzeugt keinen Code color 1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1
+
+// createBuffer color 34962 
+var buffer=gl.createBuffer(); 
+var array= new Float32Array(color);
+gl.bindBuffer(34962,buffer);
+gl.bufferData(34962, array, gl.STATIC_DRAW);
+aBuffer[1]=buffer;
+
+// addNewProgram erzeugt keinen Code 
+
+// ShaderCatalog
+var vertexShader="attribute vec4 a_position; uniform mat4 u_matrix; attribute vec4 a_color; varying vec4 v_color; void main(){ gl_Position=vec4(u_matrix*a_position); v_color = a_color; } ";
+var fragmentShader="precision mediump float; varying vec4 v_color; void main(){ gl_FragColor=v_color; } ";
+
+// getProgramIndex erzeugt keinen Code
+
+// createProgram
+// createShader
+var v = gl.createShader(35633);
+gl.shaderSource(v,vertexShader);
+gl.compileShader(v);
+
+// createShader
+var f = gl.createShader(35632);
+gl.shaderSource(f,fragmentShader);
+gl.compileShader(f);
+
+var prog= gl.createProgram();
+gl.attachShader(prog, v);
+gl.attachShader(prog, f);
+gl.linkProgram(prog);
+aProg[0]=prog;
+
+// getAttributeIndices erzeugt keinen Code
+
+// getUniformIndices 
+
+aUniform[0]=gl.getUniformLocation(aProg[0],'u_matrix')
+
+// Teil 3 drawScene
 
 
+drawScene();
+
+
+function drawScene(){
+// setWebGLDrawOptions
+gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+gl.enable(gl.CULL_FACE);
+gl.enable(gl.DEPTH_TEST);
+
+gl.useProgram(aProg[0]);
+// drawObject
+var viewPort = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]
+var worldMatrix=m4.translate(viewPort,gPos[0],gPos[1],gPos[2]) 
+//setUniforms
+gl.uniformMatrix4fv(aUniform[0], false, worldMatrix );
+//setAttributes
+gl.bindBuffer(gl.ARRAY_BUFFER,aBuffer[0]);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+
+gl.bindBuffer(gl.ARRAY_BUFFER,aBuffer[1]);
+gl.enableVertexAttribArray(1);
+gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 0, 0);
+
+//drawTriangles
+gl.drawArrays(gl.TRIANGLES,0, 6);
+}
  
 </script>
 </body> 

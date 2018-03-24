@@ -44,7 +44,9 @@ var Child=function(voChildData){
         t+="usage: {attribute:value,attribute:value,...}\n";
         t+="type:     'triangle'\n";
         t+="position: {x:number,y:number,z:number}\n";            
-        t+="color:    [r,g,b,a] values:[0.0 .. 1.0]\n";            
+        t+="color:    [r,g,b,a] values:[0.0 .. 1.0]\n";
+        t+="\n";
+        t+="data.pos=[x,y,z] \n";
         return t;
     }
 }

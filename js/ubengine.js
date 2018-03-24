@@ -66,17 +66,15 @@ var UBEngine=function(vsId){
         /* alle Uniforms uniform{index:, type: ,value: ,name:} setzen */
         function setUniforms(){
           simpleCode+=`//setUniforms<br>`;  
-          this.uniform.map(function(u){
+          this.uniform.map(function(u,index){
                 switch (u.type){
                     case "4fv": 
-                        gl.uniformMatrix4fv(u.variable, false, u.value); 
-                        simpleCode+=`gl.uniformMatrix4fv(`+u.variable+`, false, `+u.value+` );<br>`;
+                        gl.uniformMatrix4fv(u.variable, false, u.value);                         
+                        simpleCode+=`gl.uniformMatrix4fv(aUniform[`+index+`], false, `+u.name+` );<br>`;
                     break;
               } // Ende switch u.type
           })
         }
-
-       
 
         /* alle Buffer setzen */
         function setAttributes(voWorld){
@@ -140,6 +138,7 @@ var UBEngine=function(vsId){
     function start(){
         // nur einmal zeichnen
         simpleCode+=`// Teil 3 drawScene<br><br>`;
+        simpleCode+=`drawScene();<br><br>`;
         drawScene();
     }
 
@@ -161,8 +160,13 @@ var UBEngine=function(vsId){
         function addNewWord(extWorld){
             simpleCode+=`// Teil 2 addNewWord erzeugt keinen Code<br><br>
             var aBuffer=[]; // nur für Script <br>
-            var aUniforms=[]; // nur für Script <br>
+            var aUniform=[]; // nur für Script <br>
             var aProg=[]; // nur für Script<br>
+            var gPos=[0,0,0];<br> 
+            function moveObject(x){<br>
+                gPos = [x/100,Math.sin(x/100)*Math.sin(x/100),0]; // Absolute Position aus dem Regler<br>                   
+                drawScene();<br>
+              }<br>
             <br>
             `;
 
@@ -184,7 +188,8 @@ var UBEngine=function(vsId){
         function addNewChild(extChild){
             simpleCode+=`// addNewChild erzeugt keinen Code<br><br>`;
             // this Zeiger ist hier: intWorld aus addNewWorld
-            var intChild=new UBChild();  
+            var intChild=new UBChild();              
+            if(!extChild.data) {extChild.data={pos:[0,0,0]}}; // Inialisieren
             intChild.matrix = extChild.data;  
             
             // Im FormCatalog stehen alle gültigen Geometrien | Formen
@@ -317,10 +322,11 @@ var UBEngine=function(vsId){
 
         // Holen der Nummer des Uniformss aus dem erstellen Programm        
         function getUniformIndices(voChild){
-            simpleCode+=`// getUniformIndices erzeugt keinen Code<br><br>`;
-            voChild.uniform.map(function(uniform){
+            simpleCode+=`// getUniformIndices <br><br>`;
+            voChild.uniform.map(function(uniform,index){
                 // Der Name (a_position|a_color) wird im Programm gesucht und die zugehörige Nummer wird zurückgegeben
                 uniform.variable=gl.getUniformLocation(aProgram[voChild.programIndex], uniform.id);                
+                simpleCode+=`aUniform[`+index+`]=gl.getUniformLocation(aProg[`+voChild.programIndex+`],'`+uniform.id+`')<br><br>`;
             },voChild);            
         }
 
@@ -432,8 +438,11 @@ if(!gl) {alert('Unable to create Web GL context');}<br><br>
     /* RENDER LOOP */
     /* oder einfacher Aufruf */
     function drawScene(){
+
+        simpleCode+=`function drawScene(){<br>`;
         // WebGL Optionen setzen (alles löschen, cull mode, depth buffer)
         setWebGLDrawOptions();
+       
     
         // Schleife über alle Welten
         maoWorld.map(function(world){
@@ -456,6 +465,7 @@ if(!gl) {alert('Unable to create Web GL context');}<br><br>
             }, world) ; // world in map bekannt machen (wird zu this)
     
         } );    
+        simpleCode+=`<br>}<br>`;
     }
 
     /* Setzen von CULL, BIT, DEPTH*/
@@ -481,12 +491,16 @@ if(!gl) {alert('Unable to create Web GL context');}<br><br>
         var drawMode; // {index:false,position:true,count:}
      
         // Objekt-Matrix
-        var objectMatrix = voWorld.moViewMatrix;
+        var viewPort = voWorld.moViewMatrix;
 
-        var pos=voChild.matrix;
+        var pos=voChild.matrix.pos;        
+        var worldMatrix=m4.translate(viewPort,pos[0],pos[1],pos[2])
       
         // Matrizen berechnen
-        voChild.setUniformVariable('worldMatrix',objectMatrix);
+        voChild.setUniformVariable('worldMatrix',worldMatrix);
+
+        simpleCode+=`var viewPort = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]<br>`;
+        simpleCode+=`var worldMatrix=m4.translate(viewPort,gPos[0],gPos[1],gPos[2]) <br>`;
 
         // Objekt - Uniforms (Matrizen und sonstige veränderbare Informationen (z.B: an/aus))
         voChild.setUniforms();
