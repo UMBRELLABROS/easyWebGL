@@ -30,7 +30,7 @@ var World=function(){
 var Child=function(voChildData){        
     this.type=voChildData.type||'triangle';   // Geometrische Form
     this.position=voChildData.position||{x:0,y:0,z:0}; // Position des Zentrums
-    this.color=voChildData.color||[0.0,0.0,0.0,1.0]; // Farbe für alle Punkte
+    this.color=voChildData.color||null; // Farbe für alle Punkte
 
     // Funktionen
     this.data;             //  externes Array verschieben, verdrehen (Zum Durchreichen an die engine)   

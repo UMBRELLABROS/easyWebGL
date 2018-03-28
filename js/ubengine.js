@@ -4,6 +4,7 @@ var UBEngine=function(vsId){
     var sDivId = vsId;
     var gl; // webGL
     var maoWorld=[]; // Speicher für alle Welten (idR nur eine) [UBWorld]
+    var startTime=0;          // Startzeit für Renderloop  
     var simpleCode=""; // Einfacher Code, wie man ihn im Internet für Einsteiger findet
 
     getContext();   // Initial-Funktion um gl zubestimmen
@@ -23,8 +24,8 @@ var UBEngine=function(vsId){
         setViewMatrix:function(type){
             switch(type){
                 default:
-                    this.moViewMatrix =[1,0,0,0,
-                                        0,1,0,0,
+                    this.moViewMatrix =[1/600,0,0,0,
+                                        0,1/300,0,0,
                                         0,0,1,0,
                                         0,0,0,1];
                 break;
@@ -138,8 +139,8 @@ var UBEngine=function(vsId){
     function start(){
         // nur einmal zeichnen
         simpleCode+=`// Teil 3 drawScene<br><br>`;
-        simpleCode+=`drawScene();<br><br>`;
-        drawScene();
+        simpleCode+=`drawScene();<br><br>`;        
+        renderLoop();
     }
 
     /* Eine interne World hinzufügen */
@@ -436,7 +437,18 @@ if(!gl) {alert('Unable to create Web GL context');}<br><br>
     }
 
     /* RENDER LOOP */
-    /* oder einfacher Aufruf */
+    // RenderLoop für Animation
+    function renderLoop(timestamp){
+        if (!startTime) startTime = timestamp;
+        var progress = timestamp - startTime;
+        if (progress > 50) {
+            drawScene();
+            startTime=timestamp;
+        }
+        requestAnimationFrame(renderLoop);
+    }
+
+    /*  einfacher Aufruf */
     function drawScene(){
 
         simpleCode+=`function drawScene(){<br>`;
@@ -472,8 +484,8 @@ if(!gl) {alert('Unable to create Web GL context');}<br><br>
     function setWebGLDrawOptions(){
         simpleCode+=`// setWebGLDrawOptions<br>`;
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);     // Canvas löschen
-        gl.enable(gl.CULL_FACE);  // Nur Vorderseite zeigen
-        gl.enable(gl.DEPTH_TEST); // Dreiecke werden richtig angeordnet (und schneiden sich sogar)
+        //gl.enable(gl.CULL_FACE);  // Nur Vorderseite zeigen
+        //gl.enable(gl.DEPTH_TEST); // Dreiecke werden richtig angeordnet (und schneiden sich sogar)
         simpleCode+=`
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);<br>
         gl.enable(gl.CULL_FACE);<br>

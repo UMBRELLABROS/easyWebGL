@@ -13,7 +13,7 @@
     <title>easywebGL v1.0 </title>
   </head>
   <body>
-      <b>Ziel:</b> 2D Bewegung
+      <b>Ziel:</b> 3D frontal (Koordinatensystem)
       <div id='canvas'></div>
       <input type='range' id='xpos' min="-100" max="100" value="0" onChange='moveObject(obj1, this.value)'>
       <br>
@@ -27,8 +27,9 @@
 // Eine Welt erschaffen
 var wrld1 = new World();
 
-// Ein Dreieck erzeugen
-var obj1 = new Child({type:'rectangle',color:[1.0,0.0,0.0,1.0],position:{x:0,y:0.0,z:0} }); // r,g,b,a
+// Ein Würfel erzeugen
+// links->rechts, unten->oben, vorne->hinten   
+var obj1 = new Child({type:'cube',position:{x:0,y:0,z:0} }); // r,g,b,a
 
 // Dreieck(e) zur Welt hinzufügen
 wrld1.addChildren([obj1]);
@@ -43,9 +44,9 @@ eng.addWorlds([wrld1]);
 eng.start();
 
 function moveObject(obj,x){
-  var position = [x/100,Math.sin(x/100)*Math.sin(x/100),0]; // Absolute Position aus dem Regler   
+  var position = [6*x,100*Math.sin(x/100)*Math.sin(x/100),0]; // Absolute Position aus dem Regler   
   obj.data.pos=position;
-  eng.start();
+  //eng.start();
 }
 
 // Script code erzeugen
