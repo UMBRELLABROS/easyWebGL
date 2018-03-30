@@ -86,11 +86,11 @@ var FormCatalog={
         pos = pos.concat(face(aPoint,4,5,7,6)); // oben y+
         pos = pos.concat(face(aPoint,4,0,1,5)); // unten y- (pos hat 108 indices, 36 Koordinaten a 3 Werte)
 
-        // Die Indices a,b,c,d bilden ein Quadrat entgegen dem Uhrzeigersinn    
+        // Die Indices a,b,c,d bilden ein Quadrat im dem Uhrzeigersinn    
         function face(aPt,a,b,c,d){
             var tri=[];
-            tri[0] =[a,b,d];
-            tri[1] =[b,c,d];
+            tri[0] =[a,d,b];
+            tri[1] =[b,d,c];
             var aRet=[];
             for(var i=0;i<2;i++){
                 for(var j=0;j<3;j++){

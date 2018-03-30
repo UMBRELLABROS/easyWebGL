@@ -484,8 +484,8 @@ if(!gl) {alert('Unable to create Web GL context');}<br><br>
     function setWebGLDrawOptions(){
         simpleCode+=`// setWebGLDrawOptions<br>`;
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);     // Canvas löschen
-        //gl.enable(gl.CULL_FACE);  // Nur Vorderseite zeigen
-        //gl.enable(gl.DEPTH_TEST); // Dreiecke werden richtig angeordnet (und schneiden sich sogar)
+        gl.enable(gl.CULL_FACE);  // Nur Vorderseite zeigen
+        gl.enable(gl.DEPTH_TEST); // Dreiecke werden richtig angeordnet (und schneiden sich sogar)
         simpleCode+=`
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);<br>
         gl.enable(gl.CULL_FACE);<br>
