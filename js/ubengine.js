@@ -5,7 +5,7 @@ var UBEngine=function(vsId){
     var gl; // webGL
     var maoWorld=[]; // Speicher für alle Welten (idR nur eine) [UBWorld]
     var startTime=0;          // Startzeit für Renderloop  
-    var simpleCode=""; // Einfacher Code, wie man ihn im Internet für Einsteiger findet
+  
 
     getContext();   // Initial-Funktion um gl zubestimmen
 
@@ -26,7 +26,7 @@ var UBEngine=function(vsId){
                 default:
                     this.moViewMatrix =[1/600,0,0,0,
                                         0,1/300,0,0,
-                                        0,0,1,0,
+                                        0,0,1/300,0,
                                         0,0,0,1];
                 break;
             }
@@ -66,12 +66,11 @@ var UBEngine=function(vsId){
 
         /* alle Uniforms uniform{index:, type: ,value: ,name:} setzen */
         function setUniforms(){
-          simpleCode+=`//setUniforms<br>`;  
+     
           this.uniform.map(function(u,index){
                 switch (u.type){
                     case "4fv": 
                         gl.uniformMatrix4fv(u.variable, false, u.value);                         
-                        simpleCode+=`gl.uniformMatrix4fv(aUniform[`+index+`], false, `+u.name+` );<br>`;
                     break;
               } // Ende switch u.type
           })
@@ -79,7 +78,6 @@ var UBEngine=function(vsId){
 
         /* alle Buffer setzen */
         function setAttributes(voWorld){
-            simpleCode+=`//setAttributes<br>`;
             var n=0;
             var bIndex=false; // Ist vom Typ a_index
             var bPosition=false; // Ist vom Typ a_position
@@ -90,12 +88,6 @@ var UBEngine=function(vsId){
                     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
                     gl.enableVertexAttribArray(data.attributeIndex);
                     gl.vertexAttribPointer(data.attributeIndex,  data.elementCount, gl.FLOAT, false, 0, 0);
-                    simpleCode+=`
-                    gl.bindBuffer(gl.ARRAY_BUFFER,aBuffer[`+data.index+`]);<br>
-                    gl.enableVertexAttribArray(`+data.attributeIndex+`);<br>
-                    gl.vertexAttribPointer(`+data.attributeIndex+`, `+data.elementCount+`, gl.FLOAT, false, 0, 0);<br>
-                    <br>`;
-
                     if(data.attribute=="a_position"){bPosition=true;n=data.triangleCount;}
                     if(data.attribute=="a_index"){bIndex=true;n=data.triangleCount}
                 }              
@@ -105,16 +97,13 @@ var UBEngine=function(vsId){
       
         /* Dreiecke zeichnen */
         function drawTriangles(voDrawMode){
-            simpleCode+=`//drawTriangles<br>`;
             if(voDrawMode.index==true){
                 // Mit Referenzen auf Dreiecke zeichnen
                 gl.drawElements(gl.TRIANGLES, voDrawMode.count, gl.UNSIGNED_SHORT, 0);
-                simpleCode+=`gl.drawElements(gl.TRIANGLES, `+voDrawMode.count+`, gl.UNSIGNED_SHORT, 0);`;
             }
             else{
                 // Jeden Punkt einzeln zeichnen
                 gl.drawArrays(gl.TRIANGLES, 0, voDrawMode.count);
-                simpleCode+=`gl.drawArrays(gl.TRIANGLES,0, `+voDrawMode.count+`);`;
 
             }
         }
@@ -133,13 +122,10 @@ var UBEngine=function(vsId){
     
     this.start=start;               // Darstellung starten
     this.addWorlds=addWorlds;       // Scene(n)|World(s) hinzufügen
-    this.getSimpleCode=getSimpleCode;  // Tatsächlichen Code holen
     
     /* Externe START Funktion */
     function start(){
         // nur einmal zeichnen
-        simpleCode+=`// Teil 3 drawScene<br><br>`;
-        simpleCode+=`drawScene();<br><br>`;        
         renderLoop();
     }
 
@@ -159,18 +145,6 @@ var UBEngine=function(vsId){
 
         // Welt fertigstellen
         function addNewWord(extWorld){
-            simpleCode+=`// Teil 2 addNewWord erzeugt keinen Code<br><br>
-            var aBuffer=[]; // nur für Script <br>
-            var aUniform=[]; // nur für Script <br>
-            var aProg=[]; // nur für Script<br>
-            var gPos=[0,0,0];<br> 
-            function moveObject(x){<br>
-                gPos = [x/100,Math.sin(x/100)*Math.sin(x/100),0]; // Absolute Position aus dem Regler<br>                   
-                drawScene();<br>
-              }<br>
-            <br>
-            `;
-
             // 3D Daten der Kinder erzeugen
             actExtWorld = extWorld; // Merken für die Programmerstellung
             var intWorld = new UBWorld();  // lokale Klasse (s.u.)
@@ -187,7 +161,6 @@ var UBEngine=function(vsId){
         // Objekte fertigstellen (3D Daten)
         // Umwandlung von externen Daten in WebGL kompatibles Format
         function addNewChild(extChild){
-            simpleCode+=`// addNewChild erzeugt keinen Code<br><br>`;
             // this Zeiger ist hier: intWorld aus addNewWorld
             var intChild=new UBChild();              
             if(!extChild.data) {extChild.data={pos:[0,0,0]}}; // Inialisieren
@@ -195,10 +168,6 @@ var UBEngine=function(vsId){
             
             // Im FormCatalog stehen alle gültigen Geometrien | Formen
             var form = FormCatalog.getFormAttributes(extChild) // alle Attribut-Rohdaten erzeugen 
-            simpleCode+=`// FormCatalog<br>
-            var pos=[`+form.position+`];<br>
-            var color=[`+form.color+`];<br><br>
-            `;
             addNewBuffer(intChild,form);  // Buffer temporär speichern (im Kind nur einen Index auf Buffer)                        
             addNewUniform(intChild); // Uniforms mit Kindern verknüpfen  
             addNewProgram(actExtWorld,intChild); // Programme temporär speichern (im Kind nur einen Index auf Programm)                      
@@ -214,7 +183,6 @@ var UBEngine=function(vsId){
         // a_index    : Index, damit Ecken nur einmal in a_position stehen müssen   
         function addNewBuffer(roIntChild,form){
             if (!form) return;
-            simpleCode+=`// addNewBuffer erzeugt keinen Code<br><br>`;
             var index;
             if(form.position){ // Position            // bufferIndex holen
                 roIntChild.shaderFlag.position=true;
@@ -249,7 +217,6 @@ var UBEngine=function(vsId){
 
         // prüfen, ob es diesen Buffer schon gibt
         function getBufferIndex(vsDebug,vaData,voGLType){
-            simpleCode+=`// getBufferIndex erzeugt keinen Code `+vsDebug+` `+vaData+`<br><br>`;
             var nFound=null;
             // Entweder FLOAT oder INTEGERT - Buffer            
             aRawFloatOrInt.forEach(function(aV,index){
@@ -265,28 +232,17 @@ var UBEngine=function(vsId){
 
         // Tatsächlich einen Attribute-Buffer erzeugen (noch ohne Verbindung zu einem Attribute)
         function createBuffer(vsDebug,vnIndex,vaData,voGLType){
-            simpleCode+=`// createBuffer `+vsDebug+` `+voGLType+` <br>`;
             var buffer=gl.createBuffer();
-            simpleCode+=`var buffer=gl.createBuffer(); <br>`;
             switch (voGLType){
                 case gl.ARRAY_BUFFER: 
                     var array= new Float32Array(vaData);
-                    simpleCode+=`var array= new Float32Array(`+vsDebug+`);<br>`;
                 break; // Floats
                 case gl.ELEMENT_ARRAY_BUFFER: 
                     var array= new Uint16Array(vaData); 
-                    simpleCode+=`var array= new Uint16Array(`+vsDebug+`);<br>`;
                 break; // Integers
             }
             gl.bindBuffer(voGLType,buffer);
             gl.bufferData(voGLType, array, gl.STATIC_DRAW);
-
-            simpleCode+=`
-            gl.bindBuffer(`+voGLType+`,buffer);<br>
-            gl.bufferData(`+voGLType+`, array, gl.STATIC_DRAW);<br>
-            aBuffer[`+vnIndex+`]=buffer;<br>
-            <br>
-            `;
 
             aBuffer[vnIndex]=buffer; // Buffer merken
         }
@@ -297,13 +253,8 @@ var UBEngine=function(vsId){
         // Programme
         // Daten kommen aus dem ShaderCatalog in Abh. von den Optionen
         function addNewProgram(voExtWorld,roIntChild){
-            simpleCode+=`// addNewProgram erzeugt keinen Code <br><br>`;
             // Im ShaderCatalog stehen die Fragment und VertexShader
             var oShader = ShaderCatalog.getCode(voExtWorld,roIntChild);
-            simpleCode+=`// ShaderCatalog<br>
-            var vertexShader="`+oShader.vertexShader+`";<br>
-            var fragmentShader="`+oShader.fragmentShader+`";<br><br>
-            `;
             // diese Shader schon vorhanden? Programm in WebGL-World merken, Im Kind nur den Programm-Index
             roIntChild.programIndex = getProgramIndex(oShader);
 
@@ -314,7 +265,6 @@ var UBEngine=function(vsId){
 
         // Holen der Nummer des Attributes aus dem erstellen Programm
         function getAttributeIndices(voChild){
-            simpleCode+=`// getAttributeIndices erzeugt keinen Code<br><br>`;
             voChild.buffer.map(function(buffer){
                 // Der Name (a_position|a_color) wird im Programm gesucht und die zugehörige Nummer wird zurückgegeben
                 buffer.attributeIndex=gl.getAttribLocation(aProgram[voChild.programIndex], buffer.attribute);                
@@ -323,17 +273,14 @@ var UBEngine=function(vsId){
 
         // Holen der Nummer des Uniformss aus dem erstellen Programm        
         function getUniformIndices(voChild){
-            simpleCode+=`// getUniformIndices <br><br>`;
             voChild.uniform.map(function(uniform,index){
                 // Der Name (a_position|a_color) wird im Programm gesucht und die zugehörige Nummer wird zurückgegeben
                 uniform.variable=gl.getUniformLocation(aProgram[voChild.programIndex], uniform.id);                
-                simpleCode+=`aUniform[`+index+`]=gl.getUniformLocation(aProg[`+voChild.programIndex+`],'`+uniform.id+`')<br><br>`;
             },voChild);            
         }
 
         // Prüfen, ob es das Programm schon gibt
         function getProgramIndex(voData){
-            simpleCode+=`// getProgramIndex erzeugt keinen Code<br><br>`;
             // Das ist nur roher (Shader-)Text
             var sData=voData.vertexShader+voData.fragmentShader;
             var nFound=null;
@@ -350,21 +297,12 @@ var UBEngine=function(vsId){
 
         // Programm erzeugen
         function createProgram(vnIndex,voShader){
-            simpleCode+=`// createProgram<br>`;            
             var v=createShader('v',gl.VERTEX_SHADER,'vertexShader',voShader.vertexShader);     // Vertex Shader anlegen             
             var f=createShader('f',gl.FRAGMENT_SHADER,'fragmentShader',voShader.fragmentShader); // Fragment Shader anlegen            
             var prog= gl.createProgram(); // Program erzeugen
             gl.attachShader(prog, v);
             gl.attachShader(prog, f);
             gl.linkProgram(prog);  // Programm linken alle anderen Daten können gelöscht werden.
-            simpleCode+=`
-            var prog= gl.createProgram();<br> 
-            gl.attachShader(prog, v);<br>
-            gl.attachShader(prog, f);<br>
-            gl.linkProgram(prog);<br>
-            aProg[`+vnIndex+`]=prog;<br>
-            <br>
-            `; 
 
             // Fehlermeldungen, immens wichtig bei Shadern
             if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
@@ -378,15 +316,9 @@ var UBEngine=function(vsId){
 
         // Shader erzeugen, linken
         function createShader(vsDebug,voType,vsShader,vsCode){
-            simpleCode+=`// createShader<br>`; 
             var shader = gl.createShader(voType);
             gl.shaderSource(shader,vsCode);
             gl.compileShader(shader);
-            simpleCode+=`
-            var `+vsDebug+` = gl.createShader(`+voType+`);<br>
-            gl.shaderSource(`+vsDebug+`,`+vsShader+`);<br>
-            gl.compileShader(`+vsDebug+`);<br>            
-            <br>`;
             // Fehlermeldungen, immens wichtig bei Shadern
             if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
                 {alert('Error during '+voType+' shader compilation:\n\n'+ vsCode+ '\n'+ gl.getShaderInfoLog(shader)); return;}
@@ -396,9 +328,6 @@ var UBEngine=function(vsId){
 
     }
 
-    function getSimpleCode(){
-        return simpleCode;
-    }
     // Ende externe Funktionen
     // ***********************************************************************************
 
@@ -418,22 +347,6 @@ var UBEngine=function(vsId){
         try {gl = canvas.getContext('webgl')   }
         catch(e) {alert('Exception init: '+e.toString());return;}
         if(!gl) {alert('Unable to create Web GL context');return;}
-
-        // Erforderlicher Code    
-        simpleCode+=`
-// Teil 1 (getContext)<br>
-// canvas und gl(webGL) erzeugen<br> 
-var div=document.getElementById('canvas');<br>
-var canvas=document.createElement('canvas');<br>
-canvas.width=div.offsetWidth;<br>
-canvas.height=div.offsetHeight;<br>
-div.appendChild(canvas);<br>
-div.style.backgroundColor='#eeeeee';<br>
-div.style.border='solid 1px #333';<br>
-try {gl = canvas.getContext('webgl')   }<br>
-catch(e) {alert('Exception init: '+e.toString());}<br>
-if(!gl) {alert('Unable to create Web GL context');}<br><br>
-`;
     }
 
     /* RENDER LOOP */
@@ -451,7 +364,6 @@ if(!gl) {alert('Unable to create Web GL context');}<br><br>
     /*  einfacher Aufruf */
     function drawScene(){
 
-        simpleCode+=`function drawScene(){<br>`;
         // WebGL Optionen setzen (alles löschen, cull mode, depth buffer)
         setWebGLDrawOptions();
        
@@ -466,10 +378,6 @@ if(!gl) {alert('Unable to create Web GL context');}<br><br>
         
                 // Programm aktivieren
                 gl.useProgram(world.maoProgram[child.programIndex]); // Program in Eng, Index in Child
-  
-                simpleCode+=`
-                gl.useProgram(aProg[`+child.programIndex+`]);<br>
-                `;
 
                 // Ein Objekt zeichnen
                 drawObject(world,child);
@@ -477,20 +385,13 @@ if(!gl) {alert('Unable to create Web GL context');}<br><br>
             }, world) ; // world in map bekannt machen (wird zu this)
     
         } );    
-        simpleCode+=`<br>}<br>`;
     }
 
     /* Setzen von CULL, BIT, DEPTH*/
     function setWebGLDrawOptions(){
-        simpleCode+=`// setWebGLDrawOptions<br>`;
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);     // Canvas löschen
         gl.enable(gl.CULL_FACE);  // Nur Vorderseite zeigen
         gl.enable(gl.DEPTH_TEST); // Dreiecke werden richtig angeordnet (und schneiden sich sogar)
-        simpleCode+=`
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);<br>
-        gl.enable(gl.CULL_FACE);<br>
-        gl.enable(gl.DEPTH_TEST);<br>
-        <br>`;
     }
    
     /* Ein Objekt aus der Szene zeichnen */
@@ -499,20 +400,30 @@ if(!gl) {alert('Unable to create Web GL context');}<br><br>
     2. Attributes, 
     3. Dreiecke auf Medium zeichnen */
     function drawObject(voWorld,voChild){
-        simpleCode+=`// drawObject<br>`;
         var drawMode; // {index:false,position:true,count:}
      
         // Objekt-Matrix
         var viewPort = voWorld.moViewMatrix;
+        var matrix;
+        var ry = startTime/1000;
+        var pos=voChild.matrix.pos;
 
-        var pos=voChild.matrix.pos;        
-        var worldMatrix=m4.translate(viewPort,pos[0],pos[1],pos[2])
+        matrix = viewPort;
+
+        // Verschieben
+        matrix = m4.translate(matrix,pos[0],pos[1],pos[2])
+
+        // Kippen und Drehen            
+        matrix = m4.xRotate(matrix,Math.PI/8);
+        matrix = m4.yRotate(matrix,ry);
+
+        // Skalieren
+        matrix = m4.scale(matrix,1,1,1);
+                
+        var worldMatrix=matrix;
       
-        // Matrizen berechnen
+        // Matrizen übergeben
         voChild.setUniformVariable('worldMatrix',worldMatrix);
-
-        simpleCode+=`var viewPort = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]<br>`;
-        simpleCode+=`var worldMatrix=m4.translate(viewPort,gPos[0],gPos[1],gPos[2]) <br>`;
 
         // Objekt - Uniforms (Matrizen und sonstige veränderbare Informationen (z.B: an/aus))
         voChild.setUniforms();

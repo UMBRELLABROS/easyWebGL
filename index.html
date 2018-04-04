@@ -13,13 +13,11 @@
     <title>easywebGL v1.0 </title>
   </head>
   <body>
-      <b>Ziel:</b> 3D frontal (Koordinatensystem)
+      <b>Ziel:</b> 3D drehender Würfel
       <div id='canvas'></div>
       <input type='range' id='xpos' min="-100" max="100" value="0" onChange='moveObject(obj1, this.value)'>
       <br>
       
-      Direkter Script-Code
-      <div id='simpleCode'></div>
 
 <script>
 
@@ -49,8 +47,7 @@ function moveObject(obj,x){
   //eng.start();
 }
 
-// Script code erzeugen
-$('simpleCode').innerHTML = eng.getSimpleCode()
+
 
 </script>
 
