@@ -79,11 +79,11 @@ var FormCatalog={
             aPoint.push(pt); 
         }
        
-        pos = pos.concat(face(aPoint,7,3,2,6)); // hinten z+
+        pos = pos.concat(face(aPoint,7,3,2,6)); // oben y+
         pos = pos.concat(face(aPoint,5,1,3,7)); // rechts x+
-        pos = pos.concat(face(aPoint,0,2,3,1)); // vorne z-
+        pos = pos.concat(face(aPoint,0,2,3,1)); // hinten z-
         pos = pos.concat(face(aPoint,4,6,2,0)); // links x-
-        pos = pos.concat(face(aPoint,4,5,7,6)); // oben y+
+        pos = pos.concat(face(aPoint,4,5,7,6)); // vorne z+
         pos = pos.concat(face(aPoint,4,0,1,5)); // unten y- (pos hat 108 indices, 36 Koordinaten a 3 Werte)
 
         // Die Indices a,b,c,d bilden ein Quadrat im dem Uhrzeigersinn    
@@ -102,7 +102,7 @@ var FormCatalog={
 
         // Jeweils vier Punkte haben den gleichen Normalen-Vektor 
         // und eine gleiche Farbe (jede Seite anders)
-        var nor=[],aNorm=[[0,0,1],[1,0,0],[0,0,-1],[-1,0,0],[0,1,0],[0,-1,0]]; 
+        var nor=[],aNorm=[[0,1,0],[1,0,0],[0,0,-1],[-1,0,0],[0,0,1],[0,-1,0]]; 
         // weiß, rot, blau, grün , cyan, pink
         var col=[],aCol=[[1,1,1,1],[1,0,0,1],[0,0,1,1],[0,1,0,1],[0,0.7,0.7,1],[0.7,0,0.7,1]]; 
         for(var i=0;i<6;i++){

@@ -15,8 +15,8 @@
   <body>
       <b>Ziel:</b> 3D drehender Würfel
       <div id='canvas'></div>
-      <input type='range' id='xpos' min="-100" max="100" value="0" onChange='moveObject(obj1, this.value)'>
-      <br>
+      <input type='range' id='xpos' min="-100" max="100" value="0">
+      <input type='range' id='ypos' min="-100" max="100" value="0">
       
 
 <script>
@@ -25,12 +25,17 @@
 // Eine Welt erschaffen
 var wrld1 = new World();
 
-// Ein Würfel erzeugen
-// links->rechts, unten->oben, vorne->hinten   
-var obj1 = new Child({type:'cube',position:{x:0,y:0,z:0} }); // r,g,b,a
+// Direktes Licht (orientiert)
+var light1 = new Child({type:'directLight',direction:[-0.707,0,0.707]});
+
+// Ein Würfel erzeugen 
+var obj1 = new Child({type:'cube',position:{x:0,y:0,z:0},color:[0,1,0,1] }); // r,g,b,a
 
 // Dreieck(e) zur Welt hinzufügen
 wrld1.addChildren([obj1]);
+
+// Lichter
+wrld1.addLights([light1]);
 
 // Engine erzeugen (Parameter ist die id des DIVs)
 var eng = new UBEngine('canvas');
@@ -41,11 +46,27 @@ eng.addWorlds([wrld1]);
 // loslegen 
 eng.start();
 
-function moveObject(obj,x){
-  var position = [6*x,100*Math.sin(x/100)*Math.sin(x/100),0]; // Absolute Position aus dem Regler   
-  obj.data.pos=position;
-  //eng.start();
-}
+    function handleChangePos(event) {
+      var value = parseInt(event.target.value);
+      moveObject(obj1,value)                
+    }
+
+    function handleChangeLight(event) {
+      var value = parseInt(event.target.value);
+      moveLight(light1,value)                
+    }
+
+    $('xpos').addEventListener('input', handleChangePos);
+    $('ypos').addEventListener('input', handleChangeLight);
+
+    function moveObject(obj,x){
+      var position = [6*x,100*Math.sin(x/100)*Math.sin(x/100),0]; // Absolute Position aus dem Regler   
+      obj.data.pos=position;  
+    }
+
+    function moveLight(obj,y){  
+      obj.data.direction=[-0.707,-y/100,0.707];  
+    }
 
 
 

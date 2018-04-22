@@ -5,6 +5,7 @@ var UBEngine=function(vsId){
     var gl; // webGL
     var maoWorld=[]; // Speicher für alle Welten (idR nur eine) [UBWorld]
     var startTime=0;          // Startzeit für Renderloop  
+    this.actProgram = -1;     // Index des aktuellen Programms
   
 
     getContext();   // Initial-Funktion um gl zubestimmen
@@ -15,9 +16,12 @@ var UBEngine=function(vsId){
     // Objekte in der World im WebGL Format
     var UBWorld=function(){
         this.maoChild=[];     // Kinder mit Verweisen|index auf Attribute-Buffer und Uniforms
+        this.maoLight=[];     // Lichter mit Uniforms
         this.maoBuffer=[];    // Attribute-Buffer (können von vielen Kindern verwendet werden)
         this.moViewMatrix;    // Darstellungsmatrix 
-        this.maoProgram=[];   // Verwendete Programme (mit Vertex und Fragment Shadern)
+        this.maoProgram=[];   // Verwendete Programme (mit Vertex und Fragment Shadern)        
+        this.shaderFlag={directLight:false,
+                        };      // Daten für die Shader-Steuerung
     }
     UBWorld.prototype={
         /* Viewport Matrix festlegen */
@@ -35,13 +39,15 @@ var UBEngine=function(vsId){
 
 
     var UBChild=function(){
+        this.type='3Dobject';
         this.buffer=[];           // {attribute:,index:} // Verknüpfen von Kind und Buffern
         this.uniform=[];          // {name:, value: } // Daten nur im Kind  vorhanden
         this.programIndex=null;   // Referenz auf das Programm (aus IntWorld)
         this.shaderFlag={position:false,
-                         color:false};      // Daten für die Shader-Steuerung
+                         color:false,
+                         normal:false};      // Daten für die Shader-Steuerung
 
-        /* Positions- und Bewegungsinformationen */
+        /* Positions- und Bewegungsinformationen von außen */
         this.matrix;                          // Matrix-Daten          
       
         this.setUniforms=setUniforms;         // Setzen der Uniform-Locations  (Eigenschaften)
@@ -52,9 +58,18 @@ var UBEngine=function(vsId){
       
         /* lokale Uniforms anlegen/merken */ 
         function addUniform(){
-            // u_matrix ist immer erforderlich                               
-            var worldMatrix = {type:'4fv',id:'u_matrix',name:'worldMatrix'}; // Noch keine Daten, nur Referenz  
-            this.uniform.push(worldMatrix);
+            switch (this.type){
+                case '3Dobject':
+                    // u_matrix ist immer erforderlich                                
+                    var worldMatrix = {type:'Matrix4fv',id:'u_matrix',name:'worldMatrix'}; // Noch keine Daten, nur Referenz  
+                    this.uniform.push(worldMatrix);
+                break;
+                case 'light':
+                    var lightDirection = {type:'3fv', id:'u_directLight', name:'directLight'};
+                    this.uniform.push(lightDirection);
+                break;
+            }
+            
         }
 
         /* Wert in Uniform schreiben */ 
@@ -69,8 +84,11 @@ var UBEngine=function(vsId){
      
           this.uniform.map(function(u,index){
                 switch (u.type){
-                    case "4fv": 
+                    case "Matrix4fv": 
                         gl.uniformMatrix4fv(u.variable, false, u.value);                         
+                    break;
+                    case "3fv":
+                        gl.uniform3fv(u.variable, u.value); 
                     break;
               } // Ende switch u.type
           })
@@ -89,7 +107,7 @@ var UBEngine=function(vsId){
                     gl.enableVertexAttribArray(data.attributeIndex);
                     gl.vertexAttribPointer(data.attributeIndex,  data.elementCount, gl.FLOAT, false, 0, 0);
                     if(data.attribute=="a_position"){bPosition=true;n=data.triangleCount;}
-                    if(data.attribute=="a_index"){bIndex=true;n=data.triangleCount}
+                    if(data.attribute=="a_index"){bIndex=true;n=data.triangleCount;}                    
                 }              
             } )
           return {position:bPosition,isIndex:bIndex,count:n};
@@ -137,7 +155,8 @@ var UBEngine=function(vsId){
         var aRawFloatOrInt=[];  // temporäre Rohdaten FLOAT [r,g,b,a], [x,y,z], [u,v] INTEGER (für Index)        
         var aBuffer=[];     // temporäre Buffer-Daten (compiliert)     
         var aRawShader=[];  // Shader-Rohdaten (nur Code|Text)
-        var actExtWorld;    // aktuelle externe Welt (für Programm [Licht, View,...])
+        var actIntWorld;    // aktuelle externe Welt (für Programm [Licht, View,...])
+        var aLights=['directLight',]; // Liste der Objekte, die Lichter sind
 
         // Benötigte Daten auslesen/erzeugen und in lokaler WebGL maoWorld speichern (push)
         // addNewWorld ist eine function (s.u.)
@@ -146,15 +165,27 @@ var UBEngine=function(vsId){
         // Welt fertigstellen
         function addNewWord(extWorld){
             // 3D Daten der Kinder erzeugen
-            actExtWorld = extWorld; // Merken für die Programmerstellung
+            
             var intWorld = new UBWorld();  // lokale Klasse (s.u.)
+            
+            actIntWorld = intWorld; // Merken für die Programmerstellung
+            
+            // Lichter merken
+            extWorld.maLight.map(addNewLight,intWorld.maoLight);
+            
+
             // Jede Welt kann mehrere Objekte beinhalten
             // addNewChild ist eine function (s.u.), die diese Kinder formatiert
             // intWorld.maoChild ist der this-Zeiger
-            extWorld.maChild.map(addNewChild,intWorld.maoChild);
+            extWorld.maChild.map(addNewChild,intWorld);
+            
             intWorld.setViewMatrix(extWorld.viewMatrix); //   
             intWorld.maoBuffer=aBuffer; // merken der erzeugten WebGL Attribute-Buffer in der internen Welt            
-            intWorld.maoProgram=aProgram; // Merken der erzeugten WebGL Programme in der internen Welt                      
+            intWorld.maoProgram=aProgram; // Merken der erzeugten WebGL Programme in der internen Welt 
+                        
+            // Uniform Quellen aus Shader-Programm holen
+            getUniformIndices(intWorld.maoLight[0]);
+
             maoWorld.push(intWorld);
         }
 
@@ -163,15 +194,39 @@ var UBEngine=function(vsId){
         function addNewChild(extChild){
             // this Zeiger ist hier: intWorld aus addNewWorld
             var intChild=new UBChild();              
-            if(!extChild.data) {extChild.data={pos:[0,0,0]}}; // Inialisieren
+            if(!extChild.data) {
+                extChild.data={ pos:[0,0,0],
+                                direction:[0.707,0,-0.707]};                
+            }; // Inialisieren
             intChild.matrix = extChild.data;  
             
             // Im FormCatalog stehen alle gültigen Geometrien | Formen
             var form = FormCatalog.getFormAttributes(extChild) // alle Attribut-Rohdaten erzeugen 
             addNewBuffer(intChild,form);  // Buffer temporär speichern (im Kind nur einen Index auf Buffer)                        
             addNewUniform(intChild); // Uniforms mit Kindern verknüpfen  
-            addNewProgram(actExtWorld,intChild); // Programme temporär speichern (im Kind nur einen Index auf Programm)                      
-            this.push(intChild); // Zur Liste der Kinder hinzufügen
+
+            addNewProgram(actIntWorld,intChild); // Programme temporär speichern (im Kind nur einen Index auf Programm)                      
+            this.maoChild.push(intChild); // Zur Liste der Kinder hinzufügen
+        }
+
+        // Lichter anlegen
+        function addNewLight(extLight){
+            var intLight=new UBChild(); 
+            if(!extLight.data) {
+                extLight.data={ pos:[0,0,0],
+                                direction:extLight.direction||[0.7070,0,-0.707]};                
+            }; // Inialisieren
+            intLight.matrix = extLight.data;
+            intLight.type='light';
+            // Art des Lichtes ausesen und Shader-Parameter setzen  
+            switch(extLight.type){
+                case 'directLight':
+                    actIntWorld.shaderFlag.directLight = true;
+                break;
+            }   
+            addNewUniform(intLight); // Uniforms mit Kindern verknüpfen  
+            // addNewProgram(actIntWorld,intLight);   
+            this.push(intLight); // Zur Liste der Kinder hinzufügen
         }
 
         // Buffer-Index hinzufügen, falls noch nicht vorhanden
@@ -188,7 +243,7 @@ var UBEngine=function(vsId){
                 roIntChild.shaderFlag.position=true;
                 roIntChild.buffer.push({attribute:'a_position',
                                         attributeIndex:null,  // Nummer von a_position im Program
-                                        index : getBufferIndex('pos',form.position,gl.ARRAY_BUFFER),
+                                        index : getBufferIndex(form.position,gl.ARRAY_BUFFER),
                                         elementCount:3, // x,y,z
                                         triangleCount:form.position.length/3});
             }
@@ -196,14 +251,22 @@ var UBEngine=function(vsId){
                 roIntChild.shaderFlag.color=true;
                 roIntChild.buffer.push({attribute:'a_color',
                                         attributeIndex:null, // Nummer von a_color im Program
-                                        index : getBufferIndex('color',form.color,gl.ARRAY_BUFFER),
+                                        index : getBufferIndex(form.color,gl.ARRAY_BUFFER),
                                         elementCount:4, // r,g,b,a 
                                         });
+            }
+            if(form.normal){ // Normale der Vektoren 
+                roIntChild.shaderFlag.normal=true;
+                roIntChild.buffer.push({attribute:'a_normal',
+                                        attributeIndex:null, // Nummer von a_normal im Program
+                                        index : getBufferIndex(form.normal,gl.ARRAY_BUFFER),
+                                        elementCount:3, // 3 Werte bilden einen Vektor
+                                        triangleCount:form.normal.length});
             }
             if(form.index){ // Index der Koordinaten 
                 roIntChild.buffer.push({attribute:'a_index',
                                         attributeIndex:null, // Nummer von a_color im Program
-                                        index : getBufferIndex('index',form.index,gl.ELEMENT_ARRAY_BUFFER),
+                                        index : getBufferIndex(form.index,gl.ELEMENT_ARRAY_BUFFER),
                                         elementCount:3, // 3 Werte bilden ein Dreieck
                                         triangleCount:form.index.length});
             }
@@ -216,7 +279,7 @@ var UBEngine=function(vsId){
         }
 
         // prüfen, ob es diesen Buffer schon gibt
-        function getBufferIndex(vsDebug,vaData,voGLType){
+        function getBufferIndex(vaData,voGLType){
             var nFound=null;
             // Entweder FLOAT oder INTEGERT - Buffer            
             aRawFloatOrInt.forEach(function(aV,index){
@@ -226,12 +289,12 @@ var UBEngine=function(vsId){
             if(nFound!==null) return nFound;
             aRawFloatOrInt.push(vaData);   // Daten temp. lokal für Vergleich merken
             var index=aRawFloatOrInt.length-1;
-            createBuffer(vsDebug,index,vaData,voGLType);   // Buffer erzeugen
+            createBuffer(index,vaData,voGLType);   // Buffer erzeugen
             return index;
         }
 
         // Tatsächlich einen Attribute-Buffer erzeugen (noch ohne Verbindung zu einem Attribute)
-        function createBuffer(vsDebug,vnIndex,vaData,voGLType){
+        function createBuffer(vnIndex,vaData,voGLType){
             var buffer=gl.createBuffer();
             switch (voGLType){
                 case gl.ARRAY_BUFFER: 
@@ -252,15 +315,19 @@ var UBEngine=function(vsId){
         // ************************************************************************************
         // Programme
         // Daten kommen aus dem ShaderCatalog in Abh. von den Optionen
-        function addNewProgram(voExtWorld,roIntChild){
+        function addNewProgram(voIntWorld,roIntChild){
             // Im ShaderCatalog stehen die Fragment und VertexShader
-            var oShader = ShaderCatalog.getCode(voExtWorld,roIntChild);
+            var oShader = ShaderCatalog.getCode(voIntWorld,roIntChild);
             // diese Shader schon vorhanden? Programm in WebGL-World merken, Im Kind nur den Programm-Index
-            roIntChild.programIndex = getProgramIndex(oShader);
+            var programIndex = getProgramIndex(oShader);
+            roIntChild.programIndex = programIndex;
+            voIntWorld.maoLight[0].programIndex = programIndex;
 
             // Indices der Attribute finden und merken
             getAttributeIndices(roIntChild); // z.B: "a_position" zu 4 (oder andere Integer-Zahl) zuweisen
             getUniformIndices(roIntChild);
+            // Lichter
+            getUniformIndices(voIntWorld.maoLight[0]);
         }
 
         // Holen der Nummer des Attributes aus dem erstellen Programm
@@ -365,8 +432,7 @@ var UBEngine=function(vsId){
     function drawScene(){
 
         // WebGL Optionen setzen (alles löschen, cull mode, depth buffer)
-        setWebGLDrawOptions();
-       
+        setWebGLDrawOptions();        
     
         // Schleife über alle Welten
         maoWorld.map(function(world){
@@ -377,7 +443,13 @@ var UBEngine=function(vsId){
                 var world=this;
         
                 // Programm aktivieren
-                gl.useProgram(world.maoProgram[child.programIndex]); // Program in Eng, Index in Child
+                if(this.actProgram !=child.programIndex ){
+                    gl.useProgram(world.maoProgram[child.programIndex]); // Program in Eng, Index in Child
+                    this.actProgram = child.programIndex;
+                }
+
+                // Lichter setzen
+                setLights(world);
 
                 // Ein Objekt zeichnen
                 drawObject(world,child);
@@ -392,6 +464,18 @@ var UBEngine=function(vsId){
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);     // Canvas löschen
         gl.enable(gl.CULL_FACE);  // Nur Vorderseite zeigen
         gl.enable(gl.DEPTH_TEST); // Dreiecke werden richtig angeordnet (und schneiden sich sogar)
+    }
+
+    // Licht-Daten setzen
+    function setLights(voWorld){        
+        // Schleife über alle Lichter
+        voWorld.maoLight.map(function(light){
+            // Wert in Uniform schreiben
+            // Matrizen übergeben
+            light.setUniformVariable('directLight',light.matrix.direction);
+            light.setUniforms()            
+        });
+
     }
    
     /* Ein Objekt aus der Szene zeichnen */
@@ -418,7 +502,7 @@ var UBEngine=function(vsId){
         matrix = m4.yRotate(matrix,ry);
 
         // Skalieren
-        matrix = m4.scale(matrix,1,1,1);
+        matrix = m4.scale(matrix,5,5,5);
                 
         var worldMatrix=matrix;
       
